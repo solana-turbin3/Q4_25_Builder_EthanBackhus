@@ -1,0 +1,6 @@
+I believe that Solana has chosen to use Typescript for Client side development because both Typescript and Javascript are both very powerful scripting
+languages that are both very popular and have a lot of existing support. It would make sense to use Typescript over Javascript because it introduces strong
+types, which Rust is also strongly typed. This helps reduces bugs, which is especially important when dealing with blockchain transactions because
+mistakes are often irreversable and have real monetary consequences. Typescript is also a natural choice because Typescript and Javascript are what most
+of the web is built on today, so it would be a natural transition for existing web2 developers. This would help onboard web2 devs to web3, so for these reasons
+Typescript seems like the optimal choice.

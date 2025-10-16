@@ -1,0 +1,49 @@
+Streaming transaction logs mentioning 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv. Confirmed commitment
+Transaction executed in slot 373333235:
+  Signature: 2Cc7WbqoB7WdRkC7Rrp1vCuHFmPwrQUR8NJmLycjgiQ5TkH2kJjJF1NcGYm9uXPFhpJwXSm64TKrMW7GQd9xYPPk
+  Status: Ok
+  Log Messages:
+    Program 11111111111111111111111111111111 invoke [1]
+    Program 11111111111111111111111111111111 success
+Transaction executed in slot 373333237:
+  Signature: 272bGWFxrSdh2cVYBgYfSnXvgH9Pa8WfmhA7PxRtcmqdFHHZpSYeZmtzfSmbdXZvpUeG6LtSnX8SvMT5zDzNYykY
+  Status: Ok
+  Log Messages:
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv invoke [1]
+    Program log: Instruction: Initialize
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv consumed 16941 of 200000 compute units
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv success
+Transaction executed in slot 373333238:
+  Signature: 3Rq9wQ1z1Q9coEYNFUi4N8bBW6DbCdK2Beuoy4iA3AHomGocazw9hrNSziMzPERP35ueC2xn7jsKriq1543c2xgV
+  Status: Ok
+  Log Messages:
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv invoke [1]
+    Program log: Instruction: Deposit
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv consumed 6708 of 200000 compute units
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv success
+Transaction executed in slot 373333238:
+  Signature: 2kU3dttL6PuPVGo4gchLHcoCnQ51hoEn1amWUBtWE2yGXgmW8PeYoeVWw3uZHbi1PbuZt5M8CkpXrCXjheuqnBNK
+  Status: Ok
+  Log Messages:
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv invoke [1]
+    Program log: Instruction: Withdraw
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv consumed 6769 of 200000 compute units
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv success
+Transaction executed in slot 373333238:
+  Signature: 4RKxMBFRMBXEcY414HMEirdf4d4Wm4t2wnQ9mDN6ZLjQw684Ju28tM6JmU3v7q1gNAkUz9fi4bGGjZQ33nLikCEX
+  Status: Ok
+  Log Messages:
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv invoke [1]
+    Program log: Instruction: Close
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv consumed 7058 of 200000 compute units
+    Program 98Y39VoP2Xie4X8FhhYkEL6TAEGQ4A3BNbRfpwNGYvPv success
