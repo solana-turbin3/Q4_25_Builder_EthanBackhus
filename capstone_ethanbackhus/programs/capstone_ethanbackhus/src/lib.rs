@@ -8,8 +8,6 @@ use state::*;
 
 declare_id!("3mmGkqMXHZ878yp9UpPos48FLa4HNPEKkZtHhkZemrrd");
 
-use crate::instruction::InitPaymentSession;
-
 #[program]
 pub mod capstone_ethanbackhus {
 
@@ -25,6 +23,12 @@ pub mod capstone_ethanbackhus {
         settlement_authority: Pubkey,
     ) -> Result<()> {
         ctx.accounts.initialize(merchant_id, amount, expiry_ts, reference_id, settlement_authority, &ctx.bumps)?;
+        Ok(())
+    }
+
+    pub fn deposit_stablecoin(
+        ctx: Context<DepositStablecoin>,
+    ) -> Result<()> {
         Ok(())
     }
 }
