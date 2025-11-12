@@ -16,6 +16,13 @@ pub struct InitPaymentSession<'info> {
     pub token_mint: Account<'info, Mint>,    // change to USDG?
 
     #[account(
+        mut,
+        associated_token::mint = token_mint,
+        associated_token::authority = payer,
+    )]
+    pub payer_ata: Account<'info, TokenAccount>,
+
+    #[account(
         init,
         payer = payer,
         space = PaymentSession::DISCRIMINATOR.len() + PaymentSession::INIT_SPACE,
@@ -36,14 +43,17 @@ pub struct InitPaymentSession<'info> {
 impl<'info> InitPaymentSession<'info> {
         pub fn initialize(
         &mut self,
+        uuid: [u8; 16],     // take uuid as an input
         merchant_id: String,
         amount: u64,
-        expiry_ts: i64,
         reference_id: String,
         settlement_authority: Pubkey,
         bumps: &InitPaymentSessionBumps,
     ) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
+
+        // it will expire in 60 seconds for testing purposes
+        let expiry_ts = now + 60;
 
         // Get bump for PDA
         //let bump = ctx.bumps.payment_session;
@@ -69,6 +79,7 @@ impl<'info> InitPaymentSession<'info> {
             merchant_id,
             amount,
             token_mint: self.token_mint.key(),
+            payer_ata: self.payer_ata.key(),
             escrow_ata: self.escrow_ata.key(),
             status: PaymentSessionStatus::Initialized,
             expiry_ts,
@@ -78,6 +89,7 @@ impl<'info> InitPaymentSession<'info> {
             bump: bumps.payment_session,
             reference_id,
             settlement_authority,
+            uuid,
         });
 
         Ok(())
