@@ -8,7 +8,6 @@ use crate::state::payment_session::{PaymentSession, PaymentSessionCreated, Payme
 
 
 #[derive(Accounts)]
-#[instruction(merchant_id: String, amount: u64, expiry_ts: i64, reference_id: String, settlement_authority: Pubkey)]
 pub struct DepositStablecoin<'info> {
 
     #[account(mut)]
@@ -23,10 +22,9 @@ pub struct DepositStablecoin<'info> {
     pub payer_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    /// CHECK: will be created via CPI
-    pub escrow_ata: UncheckedAccount<'info>,
+    pub escrow_ata: Account<'info, TokenAccount>,
 
-    pub token_mint: Account<'info, Mint>,    // change to USDG?
+    pub token_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
