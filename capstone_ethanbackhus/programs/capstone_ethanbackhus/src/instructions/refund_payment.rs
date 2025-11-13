@@ -21,8 +21,7 @@ pub struct RefundPayment<'info> {
     pub payer_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    /// CHECK: will be created via CPI
-    pub escrow_ata: UncheckedAccount<'info>,
+    pub escrow_ata: Account<'info, TokenAccount>,
 
     pub token_mint: Account<'info, Mint>,    // change to USDG?
 
@@ -52,7 +51,7 @@ impl<'info> RefundPayment <'info> {
         let cpi_accounts = TransferChecked {
             from: self.escrow_ata.to_account_info(),
             to: self.payer_ata.to_account_info(),
-            authority: self.escrow_ata.to_account_info(),
+            authority: self.payment_session.to_account_info(),
             mint: self.token_mint.to_account_info()
         };
 

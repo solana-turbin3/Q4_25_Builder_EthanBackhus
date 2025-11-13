@@ -8,6 +8,7 @@ use crate::state::payment_session::{PaymentSession, PaymentSessionCreated, Payme
 
 
 #[derive(Accounts)]
+#[instruction(uuid: [u8; 16])]
 pub struct DepositStablecoin<'info> {
 
     #[account(mut)]

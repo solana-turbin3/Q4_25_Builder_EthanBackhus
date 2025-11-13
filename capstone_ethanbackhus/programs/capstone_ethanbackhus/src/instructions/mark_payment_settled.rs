@@ -21,8 +21,7 @@ pub struct MarkPaymentSettled<'info> {
     pub payer_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    /// CHECK: will be created via CPI
-    pub escrow_ata: UncheckedAccount<'info>,
+    pub escrow_ata: Account<'info, TokenAccount>,
 
     #[account(mut)]
     pub merchant_ata: Account<'info, TokenAccount>,
