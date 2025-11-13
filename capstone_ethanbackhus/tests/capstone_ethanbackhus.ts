@@ -22,6 +22,7 @@ import { isAccountsGeneric } from "@coral-xyz/anchor/dist/cjs/program/accounts-r
 import { flattenPartialAccounts } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 import { get } from "http";
 import { format } from "path";
+import { set } from "@coral-xyz/anchor/dist/cjs/utils/features";
 
 describe("capstone_ethanbackhus", () => {
   // Configure the client to use the local cluster.
@@ -270,6 +271,14 @@ describe("capstone_ethanbackhus", () => {
 
   it("Payment was successful, marking payment settled", async () => {
 
+    // define the merchant ata
+    const merchantAta = await getOrCreateAssociatedTokenAccount(
+      connection,
+      wallet.payer,     // switch from merchant, merchant is not funded so it will not create the ATA and silently fail
+      tokenMint,
+      settlementAuth.publicKey
+    );
+
     // execute mark payment settled instruction
     const tx = await program.methods
     .markPaymentSettled(
@@ -280,6 +289,8 @@ describe("capstone_ethanbackhus", () => {
       paymentSession: paymentSession,
       payerAta: payerAtaAccount.address,
       escrowAta: escrowAta,
+      merchantAta: merchantAta.address,
+      settlementAuthority: settlementAuth.publicKey,
       tokenMint: tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -292,13 +303,6 @@ describe("capstone_ethanbackhus", () => {
 
     // fetch session
     const sessionAccount = await program.account.paymentSession.fetch(paymentSession);
-
-    const merchantAta = await getOrCreateAssociatedTokenAccount(
-      connection,
-      merchant,
-      tokenMint,
-      settlementAuth.publicKey
-    );
 
     // get payer and escrow balances after refund
     payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
@@ -316,6 +320,6 @@ describe("capstone_ethanbackhus", () => {
     assert.equal(payerBalanceAfter.amount, BigInt(0));                        // payer balance should be zero
     assert.equal(escrowBalanceAfter.amount, BigInt(0));                       // escrow balance should be zero
     assert.equal(merchantBalanceAfter.amount, BigInt(paymentAmount));         // merchant balance should equal payment amount
-  })
+  });
 
 });

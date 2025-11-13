@@ -14,19 +14,33 @@ pub struct MarkPaymentSettled<'info> {
 
     #[account(
         mut,
+        seeds = [b"payment_session", payer.key().as_ref(), payment_session.uuid.as_ref()],
+        bump = payment_session.bump,
     )]
     pub payment_session: Account<'info, PaymentSession>,
 
+    // Payer's token account (escrow source)
     #[account(mut)]
     pub payer_ata: Account<'info, TokenAccount>,
 
+    // escrow token account (tokens temporarily held here)
     #[account(mut)]
     pub escrow_ata: Account<'info, TokenAccount>,
 
+    // Merchant's token account (escrow destination)
     #[account(mut)]
     pub merchant_ata: Account<'info, TokenAccount>,
 
-    pub token_mint: Account<'info, Mint>,    // change to USDG?
+    // PDA authority over escrow_ata
+    #[account(
+        seeds = [b"settlement_authority"],
+        bump,
+    )]
+    /// CHECK: This PDA signs the escrow transfer
+    pub settlement_authority: UncheckedAccount<'info>,
+    pub settlement_authority_bump: u8,
+
+    pub token_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -39,6 +53,18 @@ impl<'info> MarkPaymentSettled <'info> {
         uuid: [u8; 16]
     ) -> Result<()> {
 
+        require_keys_eq!(
+            self.merchant_ata.owner,
+            self.payment_session.merchant_id,
+            PaymentError::InvalidMerchant
+        );
+
+        require_keys_eq!(
+            self.merchant_ata.mint,
+            self.token_mint.key(),
+            PaymentError::InvalidMint
+        );
+    
         let payer = self.payer.key();
 
         let seeds = &[
@@ -54,7 +80,7 @@ impl<'info> MarkPaymentSettled <'info> {
         let cpi_accounts = TransferChecked {
             from: self.escrow_ata.to_account_info(),
             to: self.merchant_ata.to_account_info(),
-            authority: self.escrow_ata.to_account_info(),
+            authority: self.settlement_authority.to_account_info(),
             mint: self.token_mint.to_account_info()
         };
 
