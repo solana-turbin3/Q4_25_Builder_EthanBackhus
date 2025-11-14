@@ -43,7 +43,7 @@ describe("capstone_ethanbackhus", () => {
   let payer = wallet.publicKey;
   let createdTs = new anchor.BN(Date.now());
   const uuid = randomBytes(16);
-  let settlementAuth = Keypair.generate();
+  let settlementAuthority = Keypair.generate();
   let bnZero = new anchor.BN(0);
 
   // declarations
@@ -56,10 +56,17 @@ describe("capstone_ethanbackhus", () => {
   let payerBalanceAfter: Account;
   let escrowBalanceAfter: Account;
   let merchantBalanceAfter: Account;
+  //let settlementAuthorityPda: Account;
+  //let settlementAuthorityBump: number;
   let decimals: number = 6;
   
   const [paymentSession] = PublicKey.findProgramAddressSync(
     [Buffer.from("payment_session"), wallet.publicKey.toBuffer(), Buffer.from(uuid)],
+    program.programId
+  );
+
+  const [settlementAuthorityPda, settlementAuthorityBump] = PublicKey.findProgramAddressSync(
+    [Buffer.from("settlement_authority"), paymentSession.toBuffer(), Buffer.from(uuid)],
     program.programId
   );
 
@@ -117,13 +124,15 @@ describe("capstone_ethanbackhus", () => {
       merchantId,
       amount,
       referenceId,
-      settlementAuth.publicKey
+      settlementAuthority.publicKey
     )
     .accountsStrict({
       payer: payer,
       tokenMint: tokenMint,
       payerAta: payerAtaAccount.address,
       paymentSession: paymentSession,
+      settlementAuthority: settlementAuthorityPda,
+      settlementAuthorityBump: settlementAuthorityBump,
       escrowAta: escrowAta,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -201,6 +210,8 @@ describe("capstone_ethanbackhus", () => {
       payer: payer,
       paymentSession: paymentSession,
       payerAta: payerAtaAccount.address,
+      settlementAuthority: settlementAuthorityPda,
+      settlementAuthorityBump: settlementAuthorityBump,
       escrowAta: escrowAta,
       tokenMint: tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
@@ -219,8 +230,6 @@ describe("capstone_ethanbackhus", () => {
     payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
     escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
 
-    console.log("\n✅ Balances After Transaction");
-    console.log("Transaction signature:", tx);
     console.log("\n💰 After Deposit:");
     console.log("Payer balance after:", payerBalanceAfter.amount.toString());
     console.log("Escrow balance after:", escrowBalanceAfter.amount.toString());
@@ -240,6 +249,8 @@ describe("capstone_ethanbackhus", () => {
       payer: payer,
       paymentSession: paymentSession,
       payerAta: payerAtaAccount.address,
+      settlementAuthority: settlementAuthorityPda,
+      settlementAuthorityBump: settlementAuthorityBump,
       escrowAta: escrowAta,
       tokenMint: tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
@@ -258,9 +269,7 @@ describe("capstone_ethanbackhus", () => {
     payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
     escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
 
-    console.log("\n✅ Balances After Transaction");
-    console.log("Transaction signature:", tx);
-    console.log("\n💰 After Deposit:");
+    console.log("\n💰 After Refund:");
     console.log("Payer balance after:", payerBalanceAfter.amount.toString());
     console.log("Escrow balance after:", escrowBalanceAfter.amount.toString());
 
@@ -269,14 +278,15 @@ describe("capstone_ethanbackhus", () => {
     assert.equal(escrowBalanceAfter.amount, BigInt(0));                           // should equal zero after refund (NOTE: Make a randomizer for cases in which float is less tha 0)
   });
 
-  it("Payment was successful, marking payment settled", async () => {
+  it("Payment was successful, transferring tokens to merchant ATA and marking payment settled", async () => {
 
     // define the merchant ata
     const merchantAta = await getOrCreateAssociatedTokenAccount(
       connection,
       wallet.payer,     // switch from merchant, merchant is not funded so it will not create the ATA and silently fail
       tokenMint,
-      settlementAuth.publicKey
+      //settlementAuthority.publicKey
+      merchant.publicKey    // we want the merchant to own the merchant ATA
     );
 
     // execute mark payment settled instruction
@@ -290,7 +300,8 @@ describe("capstone_ethanbackhus", () => {
       payerAta: payerAtaAccount.address,
       escrowAta: escrowAta,
       merchantAta: merchantAta.address,
-      settlementAuthority: settlementAuth.publicKey,
+      settlementAuthority: settlementAuthorityPda,
+      settlementAuthorityBump: settlementAuthorityBump,
       tokenMint: tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -311,7 +322,7 @@ describe("capstone_ethanbackhus", () => {
 
     console.log("\n✅ Balances After Transaction");
     console.log("Transaction signature:", tx);
-    console.log("\n💰 After Deposit:");
+    console.log("\n💰 After Payment Settled:");
     console.log("Payer balance after:", payerBalanceAfter.amount.toString());
     console.log("Escrow balance after:", escrowBalanceAfter.amount.toString());
     console.log("Merchant balance after:", merchantBalanceAfter.amount.toString());

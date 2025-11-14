@@ -19,6 +19,7 @@ pub struct PaymentSession {
     #[max_len(50)]
     pub reference_id: String,               // reference identifier for tracking
     pub settlement_authority: Pubkey,       // pubkey to where we are sending the funds? do we know yet or will the backend api tell us?
+    pub settlement_bump: u8,                // bump for settlement authority PDA
     pub uuid: [u8; 16],                     // unique identifier for the payment session
 }
 

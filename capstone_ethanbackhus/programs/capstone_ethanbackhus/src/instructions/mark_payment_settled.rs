@@ -1,10 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::{AssociatedToken, create},
-    token::{Mint, Token, TokenAccount, transfer_checked, TransferChecked},
+    associated_token::{AssociatedToken},
+    token::{Mint, Token, TokenAccount, TransferChecked, transfer_checked},
 };
 
-use crate::state::{PaymentSessionSettled, payment_session::{PaymentSession, PaymentSessionRefunded, PaymentSessionStatus}};
+use crate::state::{PaymentSessionSettled, payment_session::{PaymentSession, PaymentSessionStatus}};
+use crate::{errors::PaymentError};
 
 #[derive(Accounts)]
 pub struct MarkPaymentSettled<'info> {
@@ -33,12 +34,11 @@ pub struct MarkPaymentSettled<'info> {
 
     // PDA authority over escrow_ata
     #[account(
-        seeds = [b"settlement_authority"],
-        bump,
+        seeds = [b"settlement_authority", payment_session.key().as_ref(), payment_session.uuid.as_ref()],
+        bump = payment_session.settlement_bump,
     )]
     /// CHECK: This PDA signs the escrow transfer
     pub settlement_authority: UncheckedAccount<'info>,
-    pub settlement_authority_bump: u8,
 
     pub token_mint: Account<'info, Mint>,
 
@@ -53,11 +53,14 @@ impl<'info> MarkPaymentSettled <'info> {
         uuid: [u8; 16]
     ) -> Result<()> {
 
+        // require the merchant ata to be the merchant id? how are we gonna do this?
+        /*
         require_keys_eq!(
             self.merchant_ata.owner,
             self.payment_session.merchant_id,
             PaymentError::InvalidMerchant
         );
+        */
 
         require_keys_eq!(
             self.merchant_ata.mint,
@@ -67,14 +70,26 @@ impl<'info> MarkPaymentSettled <'info> {
     
         let payer = self.payer.key();
 
+        let payment_session_key = self.payment_session.key();
+
+        let settlement_seeds: &[&[u8]] = &[
+            b"settlement_authority",
+            payment_session_key.as_ref(),
+            self.payment_session.uuid.as_ref(),
+            &[self.payment_session.settlement_bump]
+        ];
+
+        /*
         let seeds = &[
             b"payment_session",
             payer.as_ref(),
             uuid.as_ref(),
             &[self.payment_session.bump]
-        ];
+        ];*/
 
-        let signer_seeds = &[&seeds[..]];
+        //let signer_seeds = &[&seeds[..]];
+
+        let signer_seeds = &[settlement_seeds];
 
         // send payment back from escrow ata to payer ata
         let cpi_accounts = TransferChecked {

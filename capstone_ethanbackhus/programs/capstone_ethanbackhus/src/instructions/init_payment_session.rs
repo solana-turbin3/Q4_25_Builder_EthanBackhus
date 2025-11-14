@@ -35,6 +35,13 @@ pub struct InitPaymentSession<'info> {
     /// CHECK: will be created via CPI
     pub escrow_ata: UncheckedAccount<'info>,
 
+    #[account(
+        seeds = [b"settlement_authority", payment_session.key().as_ref(), uuid.as_ref()],
+        bump
+    )]
+    /// CHECK: This PDA will be used as authority for settling payments
+    pub settlement_authority: UncheckedAccount<'info>,
+
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>
@@ -81,6 +88,8 @@ impl<'info> InitPaymentSession<'info> {
             token_mint: self.token_mint.key(),
             payer_ata: self.payer_ata.key(),
             escrow_ata: self.escrow_ata.key(),
+            settlement_authority: settlement_authority.key(),
+            settlement_bump: bumps.settlement_authority,
             status: PaymentSessionStatus::Initialized,
             expiry_ts,
             created_ts: now,
@@ -88,7 +97,6 @@ impl<'info> InitPaymentSession<'info> {
             settled_ts: None,
             bump: bumps.payment_session,
             reference_id,
-            settlement_authority,
             uuid,
         });
 

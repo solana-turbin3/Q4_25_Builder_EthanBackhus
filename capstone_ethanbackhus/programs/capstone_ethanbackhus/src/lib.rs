@@ -3,6 +3,7 @@ use anchor_spl::token::TokenAccount;
 
 mod instructions;
 mod state;
+mod errors;
 
 use instructions::*;
 use state::*;

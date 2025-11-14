@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::{AssociatedToken, create},
+    associated_token::{AssociatedToken},
     token::{Mint, Token, TokenAccount, transfer_checked, TransferChecked},
 };
 
