@@ -54,17 +54,13 @@ impl<'info> InitPaymentSession<'info> {
         merchant_id: String,
         amount: u64,
         reference_id: String,
-        settlement_authority: Pubkey,
         bumps: &InitPaymentSessionBumps,
     ) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
 
         // it will expire in 60 seconds for testing purposes
         let expiry_ts = now + 60;
-
-        // Get bump for PDA
-        //let bump = ctx.bumps.payment_session;
-
+        
         // Create escrow ATA via CPI (owned by payment_session PDA)
         create(
             CpiContext::new(
@@ -80,6 +76,8 @@ impl<'info> InitPaymentSession<'info> {
             ),
         )?;
 
+        let settlement_pda = self.settlement_authority.key();
+
         // Initialize PaymentSession struct
         self.payment_session.set_inner(PaymentSession {
             payer: self.payer.key(),
@@ -88,7 +86,7 @@ impl<'info> InitPaymentSession<'info> {
             token_mint: self.token_mint.key(),
             payer_ata: self.payer_ata.key(),
             escrow_ata: self.escrow_ata.key(),
-            settlement_authority: settlement_authority.key(),
+            settlement_authority: settlement_pda,
             settlement_bump: bumps.settlement_authority,
             status: PaymentSessionStatus::Initialized,
             expiry_ts,

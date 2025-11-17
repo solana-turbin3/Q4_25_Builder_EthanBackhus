@@ -21,9 +21,8 @@ pub mod capstone_ethanbackhus {
         merchant_id: String,
         amount: u64,
         reference_id: String,
-        settlement_authority: Pubkey,
     ) -> Result<()> {
-        ctx.accounts.initialize(uuid, merchant_id, amount, reference_id, settlement_authority, &ctx.bumps)?;
+        ctx.accounts.initialize(uuid, merchant_id, amount, reference_id, &ctx.bumps)?;
         Ok(())
     }
 

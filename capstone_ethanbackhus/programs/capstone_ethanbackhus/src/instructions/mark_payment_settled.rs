@@ -68,8 +68,6 @@ impl<'info> MarkPaymentSettled <'info> {
             PaymentError::InvalidMint
         );
     
-        let payer = self.payer.key();
-
         let payment_session_key = self.payment_session.key();
 
         let settlement_seeds: &[&[u8]] = &[
