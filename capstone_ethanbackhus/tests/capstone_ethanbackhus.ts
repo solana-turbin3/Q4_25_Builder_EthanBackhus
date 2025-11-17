@@ -124,7 +124,7 @@ describe("capstone_ethanbackhus", () => {
       merchantId,
       amount,
       referenceId,
-      settlementAuthority.publicKey
+      settlementAuthorityPda
     )
     .accountsStrict({
       payer: payer,
