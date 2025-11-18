@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "DemoPay Detector",
+  "version": "1.0",
+  "description": "Detects checkout pages and triggers on-chain -> fiat payment flow.",
+  "permissions": ["scripting", "activeTab", "storage", "tabs"],
+  "host_permissions": [
+    "https://your-backend.example.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "css": ["ui.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icon48.png"
+  }
+}

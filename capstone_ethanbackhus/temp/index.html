@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Shop</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    .product { max-width: 400px; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px #ddd; }
+    .btn {
+      padding: 10px 16px;
+      background: #0070ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #0054c7; }
+    .checkout-box {
+      margin-top: 40px;
+      padding: 20px;
+      border-radius: 8px;
+      background: #f8f8f8;
+      display: none;
+    }
+    .checkout-title { font-size: 20px; margin-bottom: 10px; font-weight: bold; }
+    .field { margin: 12px 0; }
+    label { display: block; margin-bottom: 4px; }
+    input {
+      padding: 10px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Demo Shop</h1>
+
+  <div class="product">
+    <h2>Ultra Cool Headphones</h2>
+    <p>Experience music like never before.</p>
+    <strong>$199.99</strong>
+    <br/>
+    <button class="btn" id="addToCart">Add to Cart</button>
+  </div>
+
+  <div class="checkout-box" id="checkoutSection">
+    <div class="checkout-title">Checkout</div>
+
+    <p><strong>Detected Payment Portal:</strong> <span id="portalDetected">None</span></p>
+
+    <div class="field">
+      <label>Full Name</label>
+      <input id="fullName" type="text" placeholder="John Doe" />
+    </div>
+
+    <div class="field">
+      <label>Card Number</label>
+      <input id="cardNumber" type="text" placeholder="4242 4242 4242 4242" />
+    </div>
+
+    <div class="field">
+      <label>Expiration</label>
+      <input id="exp" type="text" placeholder="12/28" />
+    </div>
+
+    <div class="field">
+      <label>CVC</label>
+      <input id="cvc" type="text" placeholder="123" />
+    </div>
+
+    <button class="btn" id="payButton">Pay Now</button>
+
+  </div>
+
+  <script>
+    // Fake "Add to Cart" → show checkout section
+    document.getElementById("addToCart").addEventListener("click", () => {
+      document.getElementById("checkoutSection").style.display = "block";
+
+      // Simulate a payment portal "identifier" your browser extension can detect
+      window.__DEMO_PAYMENT_PORTAL__ = {
+        provider: "DemoPay",
+        version: "1.0",
+        amount: 19999,
+        currency: "USD"
+      };
+
+      document.getElementById("portalDetected").innerText =
+        window.__DEMO_PAYMENT_PORTAL__.provider + " (DemoPay Portal)";
+    });
+
+    // Fake pay button action
+    document.getElementById("payButton").addEventListener("click", () => {
+      alert("Payment submitted! (fake)");
+    });
+  </script>
+
+</body>
+</html>

@@ -214,8 +214,6 @@ describe("capstone_ethanbackhus", () => {
       escrowAta: escrowAta,
       tokenMint: tokenMint,
       tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      systemProgram: anchor.web3.SystemProgram.programId,
     })
     .rpc();
 
@@ -266,7 +264,7 @@ describe("capstone_ethanbackhus", () => {
     console.log("\n✅ Payment Settled");
     console.log("Transaction signature:", markPaymentTx);
 
-    // get payer and escrow balances after refund
+    // get payer and escrow balances after settlement
     payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
     escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
     const bitPayBalanceAfter = await getAccount(connection, bitpayAtaAccount.address);
@@ -284,6 +282,157 @@ describe("capstone_ethanbackhus", () => {
     assert.equal(bitPayBalanceAfter.amount, BigInt(paymentAmount));         // merchant balance should equal payment amount
   });
 
+  it("Payment failed, refunding payment", async () => {
 
+    // execute initialize payment session instruction
+    const tx = await program.methods
+    .initPaymentSession(
+      Array.from(uuid),
+      merchantId,
+      amount,
+      referenceId,
+      fiatCurrency,
+      merchantBank
+    )
+    .accountsStrict({
+      payer: payer,
+      tokenMint: tokenMint,
+      payerAta: payerAta.address,
+      paymentSession: paymentSession,
+      settlementAuthority: settlementAuthorityPda,
+      escrowAta: escrowAta,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+    console.log("\n✅ PaymentSession Initialized")
+    console.log("Transaction signature:", tx);
+
+    // get payer and escrow balances before transaction
+    payerBalanceBefore = await getAccount(connection, payerAta.address);
+    escrowBalanceBefore = await getAccount(connection, escrowAta);
+
+    // log the balances
+    console.log("\n💰 Balances Before Transaction");
+    console.log("Payer balance before:", payerBalanceBefore.amount.toString());
+    console.log("Escrow balance before:", escrowBalanceBefore.amount.toString());
+
+    // assert intial balances
+    assert.equal(payerBalanceBefore.amount, paymentAmount);
+    assert.equal(escrowBalanceBefore.amount, BigInt(0));
+
+    // Fetch payment session and assert
+    const refundSessionAccount = await program.account.paymentSession.fetch(paymentSession);
+
+    const escrowAtaSessionAccount = await getAccount(connection, refundSessionAccount.escrowAta);
+    const payerAtaSessionAccount = await getAccount(connection, refundSessionAccount.payerAta);
+
+    // get readable timestamps
+    const createdTs = Number(refundSessionAccount.createdTs);
+    const expiryTs = Number(refundSessionAccount.expiryTs);
+    const durationSeconds = expiryTs - createdTs;
+
+    console.log("\n📊 PaymentSession PDA:")
+    console.log("  Payer:", refundSessionAccount.payer.toBase58());
+    console.log("  Merchant ID:", sessionAccount.merchantId.toString());
+    console.log("  Amount:", sessionAccount.amount.toString());
+    console.log("  Token Mint:", sessionAccount.tokenMint.toBase58());
+    console.log("  Escrow ATA:", sessionAccount.escrowAta.toBase58());
+    console.log("  Payer ATA:", sessionAccount.payerAta.toBase58());
+    console.log("  Payer ATA amount:", sessionAccount.amount);
+    console.log("  Status:", sessionAccount.status);
+    console.log("  Created Timestamp:", formatDuration(createdTs));
+    console.log("  Expiry Timestamp:", formatDuration(expiryTs));
+    console.log("  Duration (HH:MM:SS):", formatDuration(durationSeconds));
+    console.log("  Bump:", sessionAccount.bump.toString());
+
+    console.log("\n💰 PaymentSession Balances:");
+    console.log("Payer balance before:", payerAtaSessionAccount.amount.toString());
+    console.log("Escrow balance before:", escrowAtaSessionAccount.amount.toString());
+
+    assert.equal(tokenMint.toBase58(), sessionAccount.tokenMint.toBase58());                // make sure token mint is equal to sessionAccount mint
+    assert.equal(payerBalanceBefore.amount, paymentAmount);                                 // DO WE NEED THIS? Need to make sure the mint amounts are equal
+    assert.equal(sessionAccount.payerAta.toBase58(), payerAta.address.toBase58());   // make sure payer ata is equal to sessionAccount payer ata
+    assert.equal(sessionAccount.escrowAta.toBase58(), escrowAta);                           // make sure escrow ata is equal to sessionAccount escrow ata
+    assert.equal(escrowAtaSessionAccount.amount, escrowBalanceBefore.amount);               // make sure escrow ata amount is equal to sessionAccount escrow ata amount
+    assert.equal(sessionAccount.payer.toBase58(), payer.toBase58());                        // make sure payer is equal to sessionAccount payer
+    assert.equal(sessionAccount.merchantId, "Amazon");                                      // make sure merchant id is equal to sessionAccount merchant id
+    assert.equal(sessionAccount.amount.toNumber(), paymentAmount);                          // make sure amount is equal to sessionAccount amount
+    assert.ok("initialized" in sessionAccount.status);                                      // make sure status is initialized     
+    assert.ok(sessionAccount.expiryTs > bnZero);                                            // make sure expiry timestamp is greater than zero
+
+
+    const depositTx = await program.methods
+    .depositStablecoin()
+    .accountsStrict({
+      payer: payer,
+      paymentSession: paymentSession,
+      payerAta: payerAta.address,
+      settlementAuthority: settlementAuthorityPda,
+      escrowAta: escrowAta,
+      tokenMint: tokenMint,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .rpc();
+
+    console.log("\n✅ Stablecoins Deposited")
+    console.log("Transaction signature:", depositTx);
+
+    // fetch session
+    sessionAccount = await program.account.paymentSession.fetch(paymentSession);
+
+    // get payer and escrow balances after transaction
+    payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
+    escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
+
+    console.log("\n💰 After Deposit:");
+    console.log("Payer balance after:", payerBalanceAfter.amount.toString());
+    console.log("Escrow balance after:", escrowBalanceAfter.amount.toString());
+
+    // assert that the coins were successfully transferred from payer to escrow
+    assert.equal(payerBalanceAfter.amount, BigInt(0));                // if full amount transferred
+    assert.equal(escrowBalanceAfter.amount, BigInt(paymentAmount));   // should equal the payment amount
+
+    const bitpayWallet = Keypair.generate();
+    const bitpayAtaAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      wallet.payer,              // payer for account creation
+      tokenMint,
+      bitpayWallet.publicKey
+    );
+
+    // execute refund payment instruction
+    const refundPaymentTx = await program.methods
+    .markPaymentSettled()
+    .accountsStrict({
+      payer: payer,
+      paymentSession: paymentSession,
+      payerAta: payerAta.address,
+      escrowAta: escrowAta,
+      tokenMint: tokenMint,
+      tokenProgram: TOKEN_PROGRAM_ID
+    })
+    .rpc();
+
+    console.log("\n✅ Payment Refunded");
+    console.log("Transaction signature:", tx);
+    
+    // fetch session
+    const sessionAccount = await program.account.paymentSession.fetch(paymentSession);
+
+    // get payer and escrow balances after refund
+    payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
+    escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
+
+    console.log("\n💰 After Refund:");
+    console.log("Payer balance after:", payerBalanceAfter.amount.toString());
+    console.log("Escrow balance after:", escrowBalanceAfter.amount.toString());
+
+    // assert that the coins were successfully transferred from payer to escrow
+    assert.equal(payerBalanceAfter.amount, BigInt(paymentAmount));      
+    assert.equal(escrowBalanceAfter.amount, BigInt(0));
+  });
 
 });

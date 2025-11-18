@@ -12,9 +12,7 @@ pub struct RefundPayment<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    #[account(
-        mut,
-    )]
+    #[account(mut)]
     pub payment_session: Account<'info, PaymentSession>,
 
     #[account(mut)]
@@ -23,11 +21,9 @@ pub struct RefundPayment<'info> {
     #[account(mut)]
     pub escrow_ata: Account<'info, TokenAccount>,
 
-    pub token_mint: Account<'info, Mint>,    // change to USDG?
+    pub token_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>
 }
 
 impl<'info> RefundPayment <'info> {
@@ -63,11 +59,9 @@ impl<'info> RefundPayment <'info> {
         transfer_checked(cpi_ctx, self.payment_session.amount, self.token_mint.decimals)?;
         
         // set paymentsession status to refunded
-
         self.payment_session.status = PaymentSessionStatus::Refunded;
 
         // emit PaymentRefunded event
-
         emit!(PaymentSessionRefunded {
             payer: self.payment_session.payer,
             merchant_id: self.payment_session.merchant_id.clone(),

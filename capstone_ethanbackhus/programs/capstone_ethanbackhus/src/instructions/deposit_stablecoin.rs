@@ -31,8 +31,6 @@ pub struct DepositStablecoin<'info> {
 
     pub token_mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>
 }
 
 impl<'info> DepositStablecoin <'info> {
