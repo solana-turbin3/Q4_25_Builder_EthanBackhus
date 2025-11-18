@@ -8,15 +8,12 @@ use crate::state::payment_session::{PaymentSession, PaymentSessionCreated, Payme
 
 
 #[derive(Accounts)]
-#[instruction(uuid: [u8; 16])]
 pub struct DepositStablecoin<'info> {
 
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    #[account(
-        mut,
-    )]
+    #[account(mut)]
     pub payment_session: Account<'info, PaymentSession>,
 
     #[account(mut)]
@@ -25,8 +22,14 @@ pub struct DepositStablecoin<'info> {
     #[account(mut)]
     pub escrow_ata: Account<'info, TokenAccount>,
 
-    pub token_mint: Account<'info, Mint>,
+    #[account(
+        seeds = [b"settlement_authority", payment_session.key().as_ref(), payment_session.uuid.as_ref()],
+        bump = payment_session.settlement_bump,
+    )]
+    /// CHECK: This PDA will be used as authority for settling payments
+    pub settlement_authority: UncheckedAccount<'info>,
 
+    pub token_mint: Account<'info, Mint>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>
@@ -34,17 +37,8 @@ pub struct DepositStablecoin<'info> {
 
 impl<'info> DepositStablecoin <'info> {
     pub fn deposit_stablecoin(
-        &mut self,
-        uuid: [u8; 16]
+        &mut self
     ) -> Result<()> {
-
-        // derive the seeds of the escrow_ata
-        let seeds = &[
-            b"payment_session",
-            self.payer.key().as_ref(),
-            &uuid,
-            &[self.payment_session.bump]
-        ];
 
         let cpi_accounts = TransferChecked {
             from: self.payer_ata.to_account_info(),
@@ -55,13 +49,10 @@ impl<'info> DepositStablecoin <'info> {
 
         let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), cpi_accounts);
 
-        // how do know it's going to be 6 decimals here?? should this be passed in?
         // execute token transfer from payer_ata to escrow_ata
         transfer_checked(cpi_ctx, self.payment_session.amount, self.token_mint.decimals)?;
-
         
         // update PDA session status to funded
-
         self.payment_session.status = PaymentSessionStatus::Funded;
 
         // emit PaymentSession created event

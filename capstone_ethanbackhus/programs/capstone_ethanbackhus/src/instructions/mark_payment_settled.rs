@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use anchor_spl::{
-    associated_token::{AssociatedToken},
     token::{Mint, Token, TokenAccount, TransferChecked, transfer_checked},
 };
 
@@ -28,10 +27,6 @@ pub struct MarkPaymentSettled<'info> {
     #[account(mut)]
     pub escrow_ata: Account<'info, TokenAccount>,
 
-    // Merchant's token account (escrow destination)
-    #[account(mut)]
-    pub merchant_ata: Account<'info, TokenAccount>,
-
     // PDA authority over escrow_ata
     #[account(
         seeds = [b"settlement_authority", payment_session.key().as_ref(), payment_session.uuid.as_ref()],
@@ -40,30 +35,23 @@ pub struct MarkPaymentSettled<'info> {
     /// CHECK: This PDA signs the escrow transfer
     pub settlement_authority: UncheckedAccount<'info>,
 
+    // Bitpay Deposit ATA (controlled by off-chain integration)
+    #[account(mut)]
+    pub bitpay_ata: Account<'info, TokenAccount>,
+
     pub token_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
-    pub associated_token_program: Program<'info, AssociatedToken>,
-    pub system_program: Program<'info, System>
 }
 
 impl<'info> MarkPaymentSettled <'info> {
     pub fn mark_payment_settled(
-        &mut self,
-        uuid: [u8; 16]
+        &mut self
     ) -> Result<()> {
 
-        // require the merchant ata to be the merchant id? how are we gonna do this?
-        /*
+        // ensure token mint matches
         require_keys_eq!(
-            self.merchant_ata.owner,
-            self.payment_session.merchant_id,
-            PaymentError::InvalidMerchant
-        );
-        */
-
-        require_keys_eq!(
-            self.merchant_ata.mint,
+            self.escrow_ata.mint,
             self.token_mint.key(),
             PaymentError::InvalidMint
         );
@@ -77,32 +65,26 @@ impl<'info> MarkPaymentSettled <'info> {
             &[self.payment_session.settlement_bump]
         ];
 
-        /*
-        let seeds = &[
-            b"payment_session",
-            payer.as_ref(),
-            uuid.as_ref(),
-            &[self.payment_session.bump]
-        ];*/
-
-        //let signer_seeds = &[&seeds[..]];
-
         let signer_seeds = &[settlement_seeds];
 
-        // send payment back from escrow ata to payer ata
+        // send payment to merchant from escrow_ata
         let cpi_accounts = TransferChecked {
             from: self.escrow_ata.to_account_info(),
-            to: self.merchant_ata.to_account_info(),
+            to: self.bitpay_ata.to_account_info(),
             authority: self.settlement_authority.to_account_info(),
             mint: self.token_mint.to_account_info()
         };
 
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), cpi_accounts, signer_seeds);
+        let cpi_ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(), 
+            cpi_accounts, 
+            signer_seeds
+        );
 
         transfer_checked(cpi_ctx, self.payment_session.amount, self.token_mint.decimals)?;
         
-        // set paymentsession status to refunded
-        self.payment_session.status = PaymentSessionStatus::Settled;
+        // set paymentsession status to indicate off-chain payout pending
+        self.payment_session.status = PaymentSessionStatus::PendingFiat;
 
         // emit PaymentSettled event
         emit!(PaymentSessionSettled{

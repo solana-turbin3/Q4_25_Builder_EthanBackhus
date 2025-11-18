@@ -33,7 +33,6 @@ pub struct RefundPayment<'info> {
 impl<'info> RefundPayment <'info> {
     pub fn refund_payment(
         &mut self,
-        uuid: [u8; 16]
     ) -> Result<()> {
 
         let payer = self.payer.key();
@@ -41,7 +40,7 @@ impl<'info> RefundPayment <'info> {
         let seeds = &[
             b"payment_session",
             payer.as_ref(),
-            uuid.as_ref(),
+            self.payment_session.uuid.as_ref(),
             &[self.payment_session.bump]
         ];
 
@@ -55,7 +54,11 @@ impl<'info> RefundPayment <'info> {
             mint: self.token_mint.to_account_info()
         };
 
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), cpi_accounts, signer_seeds);
+        let cpi_ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(), 
+            cpi_accounts, 
+            signer_seeds
+        );
 
         transfer_checked(cpi_ctx, self.payment_session.amount, self.token_mint.decimals)?;
         

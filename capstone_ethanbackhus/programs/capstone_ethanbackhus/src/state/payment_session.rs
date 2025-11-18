@@ -21,6 +21,15 @@ pub struct PaymentSession {
     pub settlement_authority: Pubkey,       // pubkey to where we are sending the funds? do we know yet or will the backend api tell us?
     pub settlement_bump: u8,                // bump for settlement authority PDA
     pub uuid: [u8; 16],                     // unique identifier for the payment session
+
+
+    // NEW STUFF
+    #[max_len(200)]
+    pub bitpay_payout_id: Option<String>,    // Only created once payout is requested
+    #[max_len(10)]
+    pub fiat_currency: String,
+    #[max_len(100)]
+    pub merchant_bank: String,
 }
 
 #[event]
@@ -74,6 +83,7 @@ pub enum PaymentSessionStatus {
     Initialized,
     Funded,
     Refunded,
+    PendingFiat,
     Settled
 }
 

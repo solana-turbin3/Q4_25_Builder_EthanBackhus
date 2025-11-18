@@ -7,13 +7,13 @@ use anchor_spl::{
 use crate::state::payment_session::{PaymentSession, PaymentSessionStatus};
 
 #[derive(Accounts)]
-#[instruction(uuid: [u8; 16])]  // using UUID as unique seed?
+#[instruction(uuid: [u8; 16])]
 pub struct InitPaymentSession<'info> {
 
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    pub token_mint: Account<'info, Mint>,    // change to USDG?
+    pub token_mint: Account<'info, Mint>,
 
     #[account(
         mut,
@@ -50,10 +50,12 @@ pub struct InitPaymentSession<'info> {
 impl<'info> InitPaymentSession<'info> {
         pub fn initialize(
         &mut self,
-        uuid: [u8; 16],     // take uuid as an input
+        uuid: [u8; 16],
         merchant_id: String,
         amount: u64,
         reference_id: String,
+        fiat_currency: String,
+        merchant_bank: String,
         bumps: &InitPaymentSessionBumps,
     ) -> Result<()> {
         let now = Clock::get()?.unix_timestamp;
@@ -68,7 +70,7 @@ impl<'info> InitPaymentSession<'info> {
                 anchor_spl::associated_token::Create {
                     payer: self.payer.to_account_info(),
                     associated_token: self.escrow_ata.to_account_info(),
-                    authority: self.payment_session.to_account_info(),
+                    authority: self.settlement_authority.to_account_info(),
                     mint: self.token_mint.to_account_info(),
                     system_program: self.system_program.to_account_info(),
                     token_program: self.token_program.to_account_info(),
@@ -96,6 +98,9 @@ impl<'info> InitPaymentSession<'info> {
             bump: bumps.payment_session,
             reference_id,
             uuid,
+            fiat_currency: fiat_currency,
+            merchant_bank: merchant_bank,
+            bitpay_payout_id: None, // this wil be set later after payout creation
         });
 
         Ok(())
