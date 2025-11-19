@@ -284,10 +284,60 @@ describe("capstone_ethanbackhus", () => {
 
   it("Payment failed, refunding payment", async () => {
 
+    const refundUuid = randomBytes(16);
+
+    const [paymentSession] = PublicKey.findProgramAddressSync(
+      [Buffer.from("payment_session"), wallet.publicKey.toBuffer(), Buffer.from(refundUuid)],
+      program.programId
+    );
+
+    const [settlementAuthorityPda, settlementAuthorityBump] = PublicKey.findProgramAddressSync(
+      [Buffer.from("settlement_authority"), paymentSession.toBuffer(), Buffer.from(refundUuid)],
+      program.programId
+    );
+
+    tokenMint = await createMint(
+      connection,
+      wallet.payer,
+      wallet.publicKey,
+      null,
+      decimals
+    );
+
+    escrowAta = getAssociatedTokenAddressSync(tokenMint, settlementAuthorityPda, true);
+
+    // create an ATA and mint tokens to it for testing
+    payerAta = await getOrCreateAssociatedTokenAccount(
+      connection,
+      wallet.payer,
+      tokenMint,
+      payer
+    );
+
+    // define payment amount
+    paymentAmount = BigInt(100);
+
+    // mint tokens to payer ATA
+    await mintTo(
+      connection,
+      wallet.payer,
+      tokenMint,
+      payerAta.address,
+      wallet.payer,
+      paymentAmount
+    );
+
+    // console logs
+    console.log("\n🏦 Initial Setup Complete");
+    console.log("-----------------------");
+    console.log("Payment Session PDA:", paymentSession.toBase58());
+    console.log("Token Mint:", tokenMint.toBase58());
+    console.log("Payer ATA:", payerAta.address.toBase58()); 
+
     // execute initialize payment session instruction
     const tx = await program.methods
     .initPaymentSession(
-      Array.from(uuid),
+      Array.from(refundUuid),
       merchantId,
       amount,
       referenceId,
@@ -324,7 +374,7 @@ describe("capstone_ethanbackhus", () => {
     assert.equal(escrowBalanceBefore.amount, BigInt(0));
 
     // Fetch payment session and assert
-    const refundSessionAccount = await program.account.paymentSession.fetch(paymentSession);
+    let refundSessionAccount = await program.account.paymentSession.fetch(paymentSession);
 
     const escrowAtaSessionAccount = await getAccount(connection, refundSessionAccount.escrowAta);
     const payerAtaSessionAccount = await getAccount(connection, refundSessionAccount.payerAta);
@@ -336,32 +386,32 @@ describe("capstone_ethanbackhus", () => {
 
     console.log("\n📊 PaymentSession PDA:")
     console.log("  Payer:", refundSessionAccount.payer.toBase58());
-    console.log("  Merchant ID:", sessionAccount.merchantId.toString());
-    console.log("  Amount:", sessionAccount.amount.toString());
-    console.log("  Token Mint:", sessionAccount.tokenMint.toBase58());
-    console.log("  Escrow ATA:", sessionAccount.escrowAta.toBase58());
-    console.log("  Payer ATA:", sessionAccount.payerAta.toBase58());
-    console.log("  Payer ATA amount:", sessionAccount.amount);
-    console.log("  Status:", sessionAccount.status);
+    console.log("  Merchant ID:", refundSessionAccount.merchantId.toString());
+    console.log("  Amount:", refundSessionAccount.amount.toString());
+    console.log("  Token Mint:", refundSessionAccount.tokenMint.toBase58());
+    console.log("  Escrow ATA:", refundSessionAccount.escrowAta.toBase58());
+    console.log("  Payer ATA:", refundSessionAccount.payerAta.toBase58());
+    console.log("  Payer ATA amount:", refundSessionAccount.amount);
+    console.log("  Status:", refundSessionAccount.status);
     console.log("  Created Timestamp:", formatDuration(createdTs));
     console.log("  Expiry Timestamp:", formatDuration(expiryTs));
     console.log("  Duration (HH:MM:SS):", formatDuration(durationSeconds));
-    console.log("  Bump:", sessionAccount.bump.toString());
+    console.log("  Bump:", refundSessionAccount.bump.toString());
 
     console.log("\n💰 PaymentSession Balances:");
     console.log("Payer balance before:", payerAtaSessionAccount.amount.toString());
     console.log("Escrow balance before:", escrowAtaSessionAccount.amount.toString());
 
-    assert.equal(tokenMint.toBase58(), sessionAccount.tokenMint.toBase58());                // make sure token mint is equal to sessionAccount mint
+    assert.equal(tokenMint.toBase58(), refundSessionAccount.tokenMint.toBase58());                // make sure token mint is equal to sessionAccount mint
     assert.equal(payerBalanceBefore.amount, paymentAmount);                                 // DO WE NEED THIS? Need to make sure the mint amounts are equal
-    assert.equal(sessionAccount.payerAta.toBase58(), payerAta.address.toBase58());   // make sure payer ata is equal to sessionAccount payer ata
-    assert.equal(sessionAccount.escrowAta.toBase58(), escrowAta);                           // make sure escrow ata is equal to sessionAccount escrow ata
+    assert.equal(refundSessionAccount.payerAta.toBase58(), payerAta.address.toBase58());   // make sure payer ata is equal to sessionAccount payer ata
+    assert.equal(refundSessionAccount.escrowAta.toBase58(), escrowAta);                           // make sure escrow ata is equal to sessionAccount escrow ata
     assert.equal(escrowAtaSessionAccount.amount, escrowBalanceBefore.amount);               // make sure escrow ata amount is equal to sessionAccount escrow ata amount
-    assert.equal(sessionAccount.payer.toBase58(), payer.toBase58());                        // make sure payer is equal to sessionAccount payer
-    assert.equal(sessionAccount.merchantId, "Amazon");                                      // make sure merchant id is equal to sessionAccount merchant id
-    assert.equal(sessionAccount.amount.toNumber(), paymentAmount);                          // make sure amount is equal to sessionAccount amount
-    assert.ok("initialized" in sessionAccount.status);                                      // make sure status is initialized     
-    assert.ok(sessionAccount.expiryTs > bnZero);                                            // make sure expiry timestamp is greater than zero
+    assert.equal(refundSessionAccount.payer.toBase58(), payer.toBase58());                        // make sure payer is equal to sessionAccount payer
+    assert.equal(refundSessionAccount.merchantId, "Amazon");                                      // make sure merchant id is equal to sessionAccount merchant id
+    assert.equal(refundSessionAccount.amount.toNumber(), paymentAmount);                          // make sure amount is equal to sessionAccount amount
+    assert.ok("initialized" in refundSessionAccount.status);                                      // make sure status is initialized     
+    assert.ok(refundSessionAccount.expiryTs > bnZero);                                            // make sure expiry timestamp is greater than zero
 
 
     const depositTx = await program.methods
@@ -381,11 +431,11 @@ describe("capstone_ethanbackhus", () => {
     console.log("Transaction signature:", depositTx);
 
     // fetch session
-    sessionAccount = await program.account.paymentSession.fetch(paymentSession);
+    refundSessionAccount = await program.account.paymentSession.fetch(paymentSession);
 
     // get payer and escrow balances after transaction
-    payerBalanceAfter = await getAccount(connection, sessionAccount.payerAta);
-    escrowBalanceAfter = await getAccount(connection, sessionAccount.escrowAta);
+    payerBalanceAfter = await getAccount(connection, refundSessionAccount.payerAta);
+    escrowBalanceAfter = await getAccount(connection, refundSessionAccount.escrowAta);
 
     console.log("\n💰 After Deposit:");
     console.log("Payer balance after:", payerBalanceAfter.amount.toString());
@@ -395,20 +445,13 @@ describe("capstone_ethanbackhus", () => {
     assert.equal(payerBalanceAfter.amount, BigInt(0));                // if full amount transferred
     assert.equal(escrowBalanceAfter.amount, BigInt(paymentAmount));   // should equal the payment amount
 
-    const bitpayWallet = Keypair.generate();
-    const bitpayAtaAccount = await getOrCreateAssociatedTokenAccount(
-      connection,
-      wallet.payer,              // payer for account creation
-      tokenMint,
-      bitpayWallet.publicKey
-    );
-
     // execute refund payment instruction
     const refundPaymentTx = await program.methods
-    .markPaymentSettled()
+    .refundPayment()
     .accountsStrict({
       payer: payer,
       paymentSession: paymentSession,
+      settlementAuthority: settlementAuthorityPda,
       payerAta: payerAta.address,
       escrowAta: escrowAta,
       tokenMint: tokenMint,
@@ -417,7 +460,7 @@ describe("capstone_ethanbackhus", () => {
     .rpc();
 
     console.log("\n✅ Payment Refunded");
-    console.log("Transaction signature:", tx);
+    console.log("Transaction signature:", refundPaymentTx);
     
     // fetch session
     const sessionAccount = await program.account.paymentSession.fetch(paymentSession);

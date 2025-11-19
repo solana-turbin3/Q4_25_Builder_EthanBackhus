@@ -21,6 +21,14 @@ pub struct RefundPayment<'info> {
     #[account(mut)]
     pub escrow_ata: Account<'info, TokenAccount>,
 
+    // PDA authority over escrow_ata
+    #[account(
+        seeds = [b"settlement_authority", payment_session.key().as_ref(), payment_session.uuid.as_ref()],
+        bump = payment_session.settlement_bump,
+    )]
+    /// CHECK: This PDA signs the escrow transfer
+    pub settlement_authority: UncheckedAccount<'info>,
+
     pub token_mint: Account<'info, Mint>,
 
     pub token_program: Program<'info, Token>,
@@ -31,13 +39,13 @@ impl<'info> RefundPayment <'info> {
         &mut self,
     ) -> Result<()> {
 
-        let payer = self.payer.key();
+        let payment_key = self.payment_session.key();
 
         let seeds = &[
-            b"payment_session",
-            payer.as_ref(),
+            b"settlement_authority",
+            payment_key.as_ref(),
             self.payment_session.uuid.as_ref(),
-            &[self.payment_session.bump]
+            &[self.payment_session.settlement_bump]
         ];
 
         let signer_seeds = &[&seeds[..]];
@@ -46,7 +54,7 @@ impl<'info> RefundPayment <'info> {
         let cpi_accounts = TransferChecked {
             from: self.escrow_ata.to_account_info(),
             to: self.payer_ata.to_account_info(),
-            authority: self.payment_session.to_account_info(),
+            authority: self.settlement_authority.to_account_info(),
             mint: self.token_mint.to_account_info()
         };
 

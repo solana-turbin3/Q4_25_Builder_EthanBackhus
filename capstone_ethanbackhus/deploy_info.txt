@@ -1,0 +1,16 @@
+Deploying cluster: https://api.devnet.solana.com
+Upgrade authority: /home/ethanbackhus/.config/solana/id.json
+Deploying program "capstone_ethanbackhus"...
+Program path: /home/ethanbackhus/SolanaProjects/q4turbin3/CLASSGITHUB/Q4_25_Builder_EthanBackhus/capstone_ethanbackhus/target/deploy/capstone_ethanbackhus.so...
+Program Id: DDR17KNMbiT9pFnncgeyLeLz6UXSnbBrwvwxzUDwLrV6
+
+Signature: CaJCMMxDTvR8QbTyD7HhsnXVrhrACeNVDpTdHtMSSnPKKDVzS6wRHp8rchuomv3SbmqxLHGT8xpEzWubPY3eER1
+
+Waiting for program DDR17KNMbiT9pFnncgeyLeLz6UXSnbBrwvwxzUDwLrV6 to be confirmed...
+Program confirmed on-chain
+Idl data length: 1434 bytes
+Step 0/1434 
+Step 600/1434 
+Step 1200/1434 
+Idl account created: 8SCbh3QxdAN21Gw1tckA5VvjxHHxEne6Thu8TecsuRDs
+Deploy success
