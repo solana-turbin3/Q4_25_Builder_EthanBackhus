@@ -33,9 +33,6 @@ describe("capstone_ethanbackhus", () => {
   const provider = anchor.getProvider();
   const wallet = provider.wallet as anchor.Wallet;
   const connection = provider.connection;
-  const merchant = Keypair.generate();
-
-  const seed = new anchor.BN(Date.now());
 
   const merchantId = "Amazon";                // in this example, Amazon will be our merchant
   const amount = new anchor.BN(100);
@@ -43,7 +40,6 @@ describe("capstone_ethanbackhus", () => {
   let payer = wallet.publicKey;
   let createdTs = new anchor.BN(Date.now());
   const uuid = randomBytes(16);
-  //const uuidLocal = randomBytes(16);
   let settlementAuthority = Keypair.generate();
   let bnZero = new anchor.BN(0);
 
@@ -55,7 +51,6 @@ describe("capstone_ethanbackhus", () => {
   let escrowBalanceBefore: Account;
   let payerBalanceAfter: Account;
   let escrowBalanceAfter: Account;
-  let merchantBalanceAfter: Account;
   let sessionAccount: any;
   let escrowAta: PublicKey;
   let bitpayAta: any;

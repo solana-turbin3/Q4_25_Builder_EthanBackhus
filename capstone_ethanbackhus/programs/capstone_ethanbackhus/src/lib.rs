@@ -1,12 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
 
 mod instructions;
 mod state;
 mod errors;
 
 use instructions::*;
-use state::*;
 
 declare_id!("DDR17KNMbiT9pFnncgeyLeLz6UXSnbBrwvwxzUDwLrV6");
 
