@@ -49,17 +49,18 @@ The project intended to use BitPay to offramp crypto to fiat, and send fiat to t
 
 Project Architecture:
 
+```text
 programs/solvia
-│
-├── payment_session.rs
-│   ├─ Initialize Payment Session Instruction
-│   ├─ Deposit Stablecoin Instruction
-│   ├─ Refund Payment Instruction
-│   └─ Mark Settled Instruction
-│
-└── state
-    └── PaymentSession (PDA)
-
+|
++-- payment_session.rs
+|   +-- Initialize Payment Session Instruction
+|   +-- Deposit Stablecoin Instruction
+|   +-- Refund Payment Instruction
+|   \-- Mark Settled Instruction
+|
+\-- state
+    \-- PaymentSession (PDA)
+```
 
 
 🧪 Testing
