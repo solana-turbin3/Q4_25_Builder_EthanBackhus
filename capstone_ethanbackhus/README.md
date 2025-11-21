@@ -47,7 +47,6 @@ This project does feature a demo frontend / backend server that can be used to s
 The project intended to use BitPay to offramp crypto to fiat, and send fiat to the merchant.
 
 
-
 Project Architecture:
 
 programs/solvia
@@ -59,7 +58,8 @@ programs/solvia
 │   └─ Mark Settled Instruction
 │
 └── state
-    └─ PaymentSession (PDA)
+    └── PaymentSession (PDA)
+
 
 
 🧪 Testing
@@ -71,7 +71,6 @@ Includes tests for:
 - Tip/payment flow
 - Settlement marking
 - Error conditions (wrong authority, double settlement, etc.)
-
 
 
 📚 Future Work
